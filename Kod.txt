@@ -1,0 +1,248 @@
+var mermiler: Array = new Array();
+var skorKutu: SkorKutu = new SkorKutu();
+var oyunZamani: int = 0;
+var dusmanlar: Array = new Array();
+var atesbuton : MovieClip = new Atesbuton();
+var baslaX:Number = 0;
+var baslaY:Number = 0;
+var hiziAzalt:Number = .5;
+var kolHizi:Number = 0;
+var surukleme:Boolean = false;
+var donusAcisi:int = 0;
+var daireCapi:int = 50;
+var oyunKolu: MovieClip  = new OyunKolu();
+var zemin : Zemin = new Zemin ();
+var gemi : Gemi = new Gemi ();
+var buton1 : MovieClip  = new Buton1();
+var buton2:  MovieClip = new Buton2();
+var baslangicekrani : MovieClip = new Baslangicekrani();
+var bitisekrani: Bitisekrani = new Bitisekrani();
+var skor : int = 0 ;
+
+Girisekrani();
+
+function Girisekrani() : void
+{
+	
+	baslangicekrani.x = 0;
+	baslangicekrani.y=0;
+	addChild(baslangicekrani);
+	
+	
+	buton1.x= 48;
+	buton1.y = 348;
+	addChild(buton1);
+	
+	buton2.x= 20;
+	buton2.y=265;
+	addChild(buton2);
+	buton1.addEventListener(MouseEvent.CLICK,OyunuBaslat);
+}
+function Girisekranikaldir(): void
+{
+	removeChild(baslangicekrani);
+	removeChild(buton1);
+	buton1.removeEventListener(MouseEvent.CLICK,OyunuBaslat);
+}
+function OyunuBaslat(evt : MouseEvent): void
+{
+	Girisekranikaldir();
+	oyunekrani();
+}
+function oyunekrani(): void 
+{
+	addChild(zemin);
+	zemin.x = 0;
+	zemin.y = 0;
+	
+	addChild(gemi);
+	gemi.x = 3;
+	gemi..y = 7;
+	
+	addChild(oyunKolu);
+	oyunKolu.x = 90;
+	oyunKolu.y = 585;
+	
+	addChild(atesbuton);
+	atesbuton.x = 330;
+	atesbuton.y = 553;
+	
+	addChild(skorKutu);
+	skorKutu.x = 157;
+	skorKutu.y = 523;
+	
+	
+	stage.addEventListener(Event.ENTER_FRAME, anaKod);
+	atesbuton.addEventListener(MouseEvent.CLICK, tara );	
+	skor = 0;
+	skorKutu.skorCikti.skorText.text = String("0");
+}
+//ekleme
+function oyunekranikaldir(): void 
+{
+	//genel elemanları kaldırmak için
+	removeChild(atesbuton);
+	removeChild(zemin);
+	removeChild(oyunKolu);
+	removeChild(skorKutu);
+	removeChild(gemi);
+
+	//mermileri kaldırmak için
+	for (var i: int = 0; i < mermiler.length; i++) {
+		removeChild(mermiler[i]);
+		mermiler.splice(i, 1);
+	}
+	//düşman gemilerini kaldırmak için
+	for (var j: int = 0; j < dusmanlar.length; j++) {
+		removeChild(dusmanlar[j]);
+		dusmanlar.splice(j, 1);
+	}
+	//olay dinleyicileri kaldırmak için (sıkıtnıolabilir)
+	//stage.removeEventListener(MouseEvent.MOUSE_DOWN, fareTikla);
+	stage.removeEventListener(Event.ENTER_FRAME, anaKod);
+}
+
+function tara(evt: MouseEvent): void 
+{
+  var mermi: Mermi = new Mermi();
+	mermi.x = gemi.x +82;
+	mermi.y = gemi.y - (gemi.height / 2)+60;
+	addChild(mermi);
+    mermiler.push(mermi);
+}
+function anaKod(evt: Event): void 
+{
+	if ( skor >= 100 )
+	{
+		oyunekranikaldir();
+		Bitisekranigetir();		
+	}	
+	
+	oyunZamani++;
+	if (oyunZamani >= 30) 
+   {
+		var dusman: Dusman = new Dusman();
+		dusman.x = Math.random() * 500 + 400 ;
+		dusman.y = Math.random() * 470 - 10 ;
+		dusman.xspeed = (Math.random() * 5) - 8;
+		dusman.yspeed = (Math.random() * 20) + 8;
+		addChild(dusman);
+		dusmanlar.push(dusman);
+		oyunZamani = 0;
+	}
+
+	//tüm düşman gemilerinin hareketleri için
+	for (i = 0; i < dusmanlar.length; i++) {
+		//düşman gemilerinin hareket yönü ve hızı için		
+		dusmanlar[i].x += dusmanlar[i].xspeed;
+		//düşman gemilerinin kenarlardan geri dönmesi için
+		if (dusmanlar[i].x >= 540 || dusmanlar[i].Y <= 40) {
+			dusmanlar[i].xspeed = -dusmanlar[i].xspeed;
+		}
+		//düşman gemileri ekranın aşağısına ulaştığında enerjinin azalması ve geminin yok olması için
+		if (dusmanlar[i].y >= 650) {			
+			removeChild(dusmanlar[i]);
+			dusmanlar.splice(i, 1);
+			break;
+		}
+	}
+
+	//tüm mermilerin hareketi için
+	for (var i: int = 0; i < mermiler.length; i++) {
+		//mermilerin hareket yönü ve hızı
+		mermiler[i].x += 20;
+		//düşman gemilerini ıskalarsak ve mermi ekran dışına çıkarsa enerjinin azalması için
+		if (mermiler[i].x > 400) {
+			removeChild(mermiler[i]);
+			mermiler.splice(i, 1);
+			break;
+		}
+		//mermilerin düşman gemilerine değmesi ve birbirine değen gemi ve merminin yok olması için
+
+		for (var j: int = 0; j < dusmanlar.length; j++) {
+			if (dusmanlar[j].hitTestObject(mermiler[i])) {
+				removeChild(dusmanlar[j]);
+				dusmanlar.splice(j, 1);
+				removeChild(mermiler[i]);
+				mermiler.splice(i, 1);
+				//düşman gemileri vurulduğunda skorun ve enerjinin artması için			
+				skor +=20;
+				skorKutu.skorCikti.skorText.text = String(skor);
+				break;
+			}
+		}
+	}
+	
+}
+
+function Bitisekranigetir (): void
+{
+	bitisekrani.x = 0;
+	bitisekrani.y = 0;
+	addChild(bitisekrani);
+
+	buton1.x = 60;
+	buton1.y = 389;
+	addChild(buton1);
+
+	buton1.addEventListener(MouseEvent.MOUSE_DOWN, oyunuYenidenbaslat);
+	//addChild(skorKutu);
+	
+	Mouse.show();		
+}
+
+function bitisEkranigit(): void {
+	removeChild(bitisekrani);
+	removeChild(buton1);
+	//removeChild(skorEkran);
+	buton1.removeEventListener(MouseEvent.MOUSE_DOWN, oyunuYenidenbaslat);
+}
+
+function oyunuYenidenbaslat(evt: MouseEvent): void 
+{
+	bitisEkranigit();
+	oyunekrani();
+}
+
+
+
+baslaX = oyunKolu.x;
+baslaY = oyunKolu.y;
+
+oyunKolu.addEventListener(MouseEvent.MOUSE_DOWN,on_mouseDown);
+stage.addEventListener(MouseEvent.MOUSE_UP,on_mouseUp);
+stage.addEventListener(Event.ENTER_FRAME, basladi);
+
+function on_mouseDown(e:MouseEvent):void
+{
+surukleme = true;
+}
+function on_mouseUp(e:MouseEvent):void
+{
+surukleme = false;
+}
+function basladi(e:Event):void
+{
+
+if(surukleme)
+    {
+        donusAcisi = Math.atan2(root.mouseY-baslaY,root.mouseX-baslaX)/(Math.PI/180);
+
+        oyunKolu.kafa.y = oyunKolu.mouseY;
+        if(oyunKolu.kafa.y > daireCapi) oyunKolu.kafa.y = daireCapi;
+        if(oyunKolu.kafa.y < -daireCapi) oyunKolu.kafa.y = -daireCapi;
+
+        if( gemi.y < 0 )gemi.y = 0;
+        if( gemi.y > stage.stageHeight-130 ) gemi.y = stage.stageHeight-130;
+
+       gemi.y += Math.sin(donusAcisi*(Math.PI/180))*(oyunKolu.kafa.y/5);
+    }
+    else
+    {
+        kolHizi = -oyunKolu.kafa.y*hiziAzalt;
+        oyunKolu.kafa.y += kolHizi;
+    }
+
+ 
+
+}
